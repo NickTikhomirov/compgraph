@@ -1,0 +1,111 @@
+<html>
+<body>
+    <canvas width='500', height='500', id='hometask02'>
+
+    </canvas>
+    <script>
+
+        var canvas = document.getElementById('hometask02');
+        var ctx = canvas.getContext('2d');
+        var colors = ['red', 'green', 'blue'];
+
+        function pixel(x, y){
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        function clear(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+        }
+        
+
+        class CustomPoint{
+            static EMPTY_POINT = new CustomPoint(0,0);
+            constructor(x, y){
+                this.x=x;
+                this.y=y;
+            }
+            static BuildWithOffset(x, y, point){
+                return new CustomPoint(x+point.x, y+point.y);
+            }
+            MoveToNew(point){
+                return CustomPoint.BuildWithOffset(this.x, this.y, point);
+            }
+            draw(){
+                pixel(this.x,this.y);
+            }
+        }
+
+        class VectorizedLine{
+            constructor(point, length, vector){
+                this.point = point;
+                this.length = length;
+                this.vector = vector;
+                this.color = 'black'
+            }
+            draw(){
+                let temp = ctx.fillStyle;
+                ctx.fillStyle = this.color;
+                for(let i=0; i<this.length; ++i){
+                    pixel(this.point.x + this.vector.x*i, this.point.y + this.vector.y*i);
+                }
+                ctx.fillStyle=temp;
+            }
+        }
+
+        var dir = true;
+        var hcoeff = 1/25.0;
+        var vcoeff = -100;
+        
+        function moveX(x){
+            if(dir)
+                return ++x;
+            return --x;
+        }
+
+        function f(x){
+            let y = Math.cos(x*hcoeff);
+            if(y<0)
+                dir = !dir;
+            while(y<0){
+                x = moveX(x);
+                y = Math.cos(x*hcoeff);
+            }
+            x = moveX(x)
+            y = Math.pow(y,y);
+            return new CustomPoint(x, vcoeff*y);
+        }
+
+        let global_offset = new CustomPoint(200,200);
+        let working_point = new CustomPoint(0,0);
+        let horizontal_vector = new CustomPoint(1, 0);
+        let vertical_vector = new CustomPoint(0, 1);
+        let hlength = 13;
+        var LINE_DRAWER = new VectorizedLine(null, hlength, null);
+        let waittime = 100;
+    
+        function drawFence(point){
+            for(let i=1; i<10; ++i){
+                if(i%3==0){
+                    LINE_DRAWER.point = new CustomPoint(point.x, point.y+i);
+                    LINE_DRAWER.vector = horizontal_vector;
+                    LINE_DRAWER.color = colors[i/3-1];
+                    LINE_DRAWER.draw();
+                    LINE_DRAWER.point = new CustomPoint(point.x+i, point.y);
+                    LINE_DRAWER.vector = vertical_vector;
+                    LINE_DRAWER.color = colors[i/3-1];
+                    LINE_DRAWER.draw();
+                }
+            }
+        }
+
+        setInterval(
+            function(){
+                clear();
+                working_point = f(working_point.x);
+                drawFence(working_point.MoveToNew(global_offset));
+            }, waittime
+        );
+
+    </script>
+</body>
+</html>
