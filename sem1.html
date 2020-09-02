@@ -1,0 +1,25 @@
+<html>
+<body>
+    <canvas width='100', height='100', id='lab01'>
+    </canvas>
+
+    <script>
+        var canvas = document.getElementById('lab01');
+        var ctx = canvas.getContext('2d');
+        var offset=0;
+        setInterval(function(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            ctx.fillStyle='pink';
+            ctx.fillRect(10,10,20,20);
+            ctx.fillRect(40,10, 20, 20);
+            ctx.fillStyle = 'black';
+            for(let i=0; i<20; ++i){
+                ctx.fillRect(10+i+offset, 10+i, 1, 1);
+            }
+            offset+=1;
+        }, 100);
+    </script>
+
+
+</body>
+</html>

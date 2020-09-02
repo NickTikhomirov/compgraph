@@ -1,0 +1,101 @@
+<html>
+<body>
+    <canvas width='100', height='100', id='hometask02'>
+
+    </canvas>
+    <script>
+
+        var canvas = document.getElementById('hometask02');
+        var ctx = canvas.getContext('2d');
+
+        function pixel(x, y){
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        function clear(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+        }
+        
+
+        class CustomPoint{
+            static EMPTY_POINT = new CustomPoint(0,0);
+            constructor(x, y){
+                this.x=x;
+                this.y=y;
+            }
+            static BuildWithOffset(x, y, point){
+                return new CustomPoint(x+point.x, y+point.y);
+            }
+            draw(){
+                pixel(this.x,this.y);
+            }
+        }
+
+        class VectorizedLine{
+            constructor(point, length, vector){
+                this.point = point;
+                this.length = length;
+                this.vector = vector;
+                this.color = 'black'
+            }
+            draw(){
+                let temp = ctx.fillStyle;
+                ctx.fillStyle = this.color;
+                for(let i=0; i<this.length; ++i){
+                    pixel(this.point.x + this.vector.x*i, this.point.y + this.vector.y*i);
+                }
+                ctx.fillStyle=temp;
+            }
+        }
+
+        
+
+
+
+        let offset = new CustomPoint(10,10);
+        let hlength = 10;
+        let vlength = 10;
+        let dlength = 10;
+        let horizontal_vector = new CustomPoint(1, 0);
+        let vertical_vector = new CustomPoint(0, 1);
+        let diagonal_vector = new CustomPoint(1, -1);
+        let top_line = new VectorizedLine(CustomPoint.BuildWithOffset(2,         0,           offset), hlength, horizontal_vector);
+        let mid_line = new VectorizedLine(CustomPoint.BuildWithOffset(2,         2+vlength,   offset), hlength, horizontal_vector);
+        let bot_line = new VectorizedLine(CustomPoint.BuildWithOffset(2,         7+2*vlength, offset), hlength, horizontal_vector);
+        let tl_vline = new VectorizedLine(CustomPoint.BuildWithOffset(0,         2,           offset), vlength, vertical_vector);
+        let tr_vline = new VectorizedLine(CustomPoint.BuildWithOffset(3+hlength, 2,           offset), vlength, vertical_vector);
+        let bl_vline = new VectorizedLine(CustomPoint.BuildWithOffset(0,         5+vlength,   offset), vlength, vertical_vector);
+        let br_vline = new VectorizedLine(CustomPoint.BuildWithOffset(3+hlength, 5+vlength,   offset), vlength, vertical_vector);
+        let top_dlin = new VectorizedLine(CustomPoint.BuildWithOffset(3,         vlength,     offset), dlength, diagonal_vector);
+        let bot_dlin = new VectorizedLine(CustomPoint.BuildWithOffset(3,   bl_vline.point.y-2,offset), dlength, diagonal_vector);
+        let waittime = 1000;
+        let counter = 0;
+
+
+        let num = [
+            [top_line, bot_line, tl_vline, tr_vline, br_vline, bl_vline],           // 0
+            [tr_vline, br_vline, top_dlin],                                         // 1
+            [top_line, bot_line, tr_vline, bot_dlin],                               // 2
+            [top_line, bot_line, mid_line, top_dlin, br_vline],                     // 3
+            [tr_vline, mid_line, top_dlin, br_vline],                               // 4
+            [top_line, bot_line, mid_line, tl_vline, br_vline],                     // 5
+            [top_line, bot_line, mid_line, tl_vline, br_vline, bl_vline],           // 6
+            [tr_vline, br_vline, top_line],                                         // 7
+            [top_line, bot_line, tl_vline, tr_vline, br_vline, bl_vline, mid_line], // 8
+            [top_line, tl_vline, tr_vline, , mid_line, bot_dlin]                    // 9
+        ]
+
+        setInterval(
+            function(){
+                clear();
+                let figure_arr = num[counter];
+                for(item in figure_arr)
+                    figure_arr[item].draw();
+                counter +=1;
+                counter %=10;
+            }, waittime
+        );
+
+    </script>
+</body>
+</html>

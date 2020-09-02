@@ -1,0 +1,23 @@
+//ONE DAY ILL BE CLEVER ENOUGH
+// ...
+//class CustomOval{
+//    constructor(point, radA, radB){
+//        this.point = point;
+//        this.rad_a = radA;
+//        this.rad_b = radB;
+//    }
+//    static BuildByRectangle(point_lu, point_rd){
+//        let rad_a = 0.5*(point_rd.x - point_lu.x);
+//        let rad_b = 0.5*(point_rd.y - point_lu.y);
+//        return new CustomOval(new CustomPoint(rad_a, rad_b), rad_a, rad_b);
+//    }
+//    draw(){
+//        let max_x = this.point.x + this.rad_a;
+//        let max_y = this.point.y + this.rad_b;
+//        for(let ix=0; ix<max_x; ++ix){
+//            for(let iy=0; iy<max_y; ++iy){
+//                if()
+//            }
+//        }
+//    }
+//}
