@@ -1,0 +1,40 @@
+<html>
+<body>
+    <script>
+        class Matrix{
+            contents = [];
+            constructor(height, width){
+                this.contents.length = height;
+                for(let i=0; i<height; ++i)
+                    this.contents[i] = this.getZeroVector(width)
+            }
+            
+            multiply(another){
+                let temp = new Matrix(this.contents.length, another.contents[0].length);  // (a*b) x (b*c) = (a*c)
+                for(let i=0; i< this.contents.length; ++i){                               // row...
+                    for(let j=0; j< another.contents[0].length; ++j){                        // ...by column
+                        for(let z=0; z<this.contents[0].length; ++z){
+                            temp.contents[i][j] +=this.contents[i][z]*another.contents[z][j];
+                        }
+                    }
+                }
+                return temp;
+            }
+
+            getZeroVector(length){
+                let result = [];
+                for(let i=0; i<length; ++i)
+                    result.push(0);
+                return result;
+            }
+        }
+
+        let TRANSFER_MATRIX = new Matrix(2, 2);
+        TRANSFER_MATRIX.contents = [
+            [1,  0],
+            [0, -1]
+        ]
+
+    </script>
+</body>
+</html>

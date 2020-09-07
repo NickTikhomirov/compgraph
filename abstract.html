@@ -1,0 +1,156 @@
+<html>
+<body>
+    <canvas width='500', height='500', id='hometask01'>
+    </canvas>
+
+
+    <script>
+        // preparation part
+        var canvas = document.getElementById('hometask01');
+        var ctx = canvas.getContext('2d');
+
+        class Matrix{
+            contents = [];
+            constructor(height, width){
+                this.contents.length = height;
+                for(let i=0; i<height; ++i)
+                    this.contents[i] = this.getZeroVector(width)
+            }
+            
+            multiply(another){
+                let temp = new Matrix(this.contents.length, another.contents[0].length);  // (a*b) x (b*c) = (a*c)
+                for(let i=0; i< this.contents.length; ++i){                               // row...
+                    for(let j=0; j< another.contents[0].length; ++j){                        // ...by column
+                        for(let z=0; z<this.contents[0].length; ++z){
+                            temp.contents[i][j] +=this.contents[i][z]*another.contents[z][j];
+                        }
+                    }
+                }
+                return temp;
+            }
+
+            getZeroVector(length){
+                let result = [];
+                for(let i=0; i<length; ++i)
+                    result.push(0);
+                return result;
+            }
+        }
+
+        let TRANSFER_MATRIX = new Matrix(2, 2);
+        TRANSFER_MATRIX.contents = [
+            [1,  0],
+            [0, -1]
+        ]
+
+        class CustomPoint{
+            static EMPTY_POINT = new CustomPoint(0,0);
+            constructor(x, y){
+                this.x=x;
+                this.y=y;
+            }
+            static BuildWithOffset(x, y, point){
+                return new CustomPoint(x+point.x, y+point.y);
+            }
+            MoveToNew(point){
+                return CustomPoint.BuildWithOffset(this.x, this.y, point);
+            }
+            draw(){
+                pixel(this.x,this.y);
+            }
+        }
+
+        class VectorizedLine{
+            constructor(point, length, vector){
+                this.point = point;
+                this.length = length;
+                this.vector = vector;
+                this.color = 'black'
+            }
+            draw(){
+                let temp = ctx.fillStyle;
+                ctx.fillStyle = this.color;
+                for(let i=0; i<this.length; ++i){
+                    pixel(this.point.x + this.vector.x*i, this.point.y + this.vector.y*i);
+                }
+                ctx.fillStyle=temp;
+            }
+        }
+
+
+        var global_offset = new CustomPoint(200,200);
+        var working_point = new CustomPoint(0,0);
+        var horizontal_vector = new CustomPoint(1, 0);
+        var vertical_vector = new CustomPoint(0, 1);
+        var hlength = 13;
+
+        class Fence{
+            static colors = ['red', 'green', 'blue'];
+            static LINE_DRAWER = new VectorizedLine(null, hlength, null);
+
+            static drawFence(point){
+                for(let i=1; i<10; ++i){
+                    if(i%3===0){
+                        Fence.LINE_DRAWER.point = new CustomPoint(point.x, point.y+i);
+                        Fence.LINE_DRAWER.vector = horizontal_vector;
+                        Fence.LINE_DRAWER.color = Fence.colors[i/3-1];
+                        Fence.LINE_DRAWER.draw();
+                        Fence.LINE_DRAWER.point = new CustomPoint(point.x+i, point.y);
+                        Fence.LINE_DRAWER.vector = vertical_vector;
+                        Fence.LINE_DRAWER.color = Fence.colors[i/3-1];
+                        Fence.LINE_DRAWER.draw();
+                    }
+                }
+            }
+        }
+
+        let another = new Matrix(2, 2);
+        let angle = Math.PI/4;
+
+        function getAnotherTransfer(){
+            another.contents = [[Math.cos(angle), Math.sin(angle)], [-Math.sin(angle), Math.cos(angle)]];
+            return another;
+        }
+
+
+
+        function pixel_direct(x, y){
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+
+        let temp = new Matrix(1, 2);
+        function pixel(x, y){
+            temp.contents = [[x, y]];
+            temp = temp.multiply(getAnotherTransfer());
+            temp = temp.multiply(TRANSFER_MATRIX);
+            pixel_direct(temp.contents[0][0]+global_offset.x, temp.contents[0][1]+global_offset.y);
+        }
+
+        function clear(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+        }
+    </script>
+
+
+
+
+
+
+    <script>
+        let waittime = 100;
+
+    
+        
+
+        //setInterval(
+        //    function(){
+        //        clear();
+        //        working_point = f(working_point.x);
+        //        drawFence(working_point.MoveToNew(global_offset));
+        //    }, waittime
+        //);
+
+    </script>
+</body>
+</html>
