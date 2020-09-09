@@ -1,0 +1,79 @@
+<html>
+<body>
+    <canvas width='500', height='500', id='hometask01'>
+    </canvas>
+    <canvas width='500', height='500', id='lab02'>
+    </canvas>
+    <a href='#' class='button', id='btn'> Save </a>
+
+
+    <script>
+        // preparation part
+        var canvas = document.getElementById('hometask01');
+        var ctx = canvas.getContext('2d');
+        var canvas2 = document.getElementById('lab02');
+        var ctx2  = canvas2.getContext('2d');
+
+
+        
+
+
+
+        function pixel(x, y){
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        function clear(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+        }
+    </script>
+
+
+
+
+
+
+    <script>
+        let waittime = 100;
+
+        let img = new Image();
+        img.src = 'ic1.png'; 
+        img.onload = function(){
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        }
+
+        let idata = ctx.getImageData(0,0, canvas.width, canvas.height);
+        let idata2 = ctx.createImageData(idata);
+
+        console.log(idata);
+
+        
+        let midline = canvas2.height/2;
+        for(let i=0; i<canvas.height; i++){
+            for(let j=0; j<canvas.width; j++){
+                for(let k=0; k<4; k++){
+                    idata2.data[4*(i*canvas2.width+j)+k] = idata.data[4*(i*canvas2.width+j)+k];
+                }
+            }
+        }
+        for(let i=0; i<canvas2.height; ++i){
+            idata2.data[4*(midline*canvas2.width+i)] = 0;
+            idata2.data[4*(midline*canvas2.width+i)+1] = 0;
+            idata2.data[4*(midline*canvas2.width+i)+2] = 0;
+            idata2.data[4*(midline*canvas2.width+i)+3] = 255;
+        }
+
+        ctx2.putImageData(idata2, 0, 0, 0, 0, canvas.width, canvas.height);
+
+        let btn = document.getElementById('btn');
+        btn.addEventListener('click', function(e){
+            let dataURL = canvas2.toDataURL('image/png');
+            btn.href = dataURL;
+            btn.download = 'test1.png';
+        });
+
+
+
+    </script>
+</body>
+</html>

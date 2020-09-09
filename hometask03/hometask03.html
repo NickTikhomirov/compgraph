@@ -1,0 +1,134 @@
+<html>
+<body>
+    <canvas width='500', height='500', id='hometask03'>
+    </canvas>
+    <a href='#' class='button', id='btn_up'>
+        <img src="arr_up.png" alt="кнопочка">    
+    </a>
+    <a href='#' class='button', id='btn_down'>  
+        <img src="arr_down.png" alt="кнопочка">
+    </a>
+    <a href='#' class='button', id='btn_left'> 
+        <img src="arr_left.png" alt="кнопочка">
+    </a>
+    <a href='#' class='button', id='btn_right'> 
+        <img src="arr_right.png" alt="кнопочка">
+    </a>
+
+
+    <script>
+        console.log('started!!!!!!!!!');
+        // preparation part
+        var canvas = document.getElementById('hometask03');
+        var ctx = canvas.getContext('2d');
+
+        let btn_up = document.getElementById('btn_up');
+        let btn_down = document.getElementById('btn_down');
+        let btn_right = document.getElementById('btn_right');
+        let btn_left = document.getElementById('btn_left');
+
+        function pixel(x, y){
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        function clear(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+        }
+
+
+        let waittime = 100;
+        let vertical_line_pos = 0;
+        let horizontal_line_pos = 0;
+        let step_vertical = 5;
+        let step_horizontal = 5;
+        let vertical_line_max = 0;
+        let horizontal_line_max = 0;
+
+        console.log('began loading img!!!!!!!!!');
+        let img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = 'pic.jpg'; 
+        img.onload = function(){
+            console.log('loaded!!!!!!!!!');
+            vertical_line_pos = img.width/2;
+            horizontal_line_pos = img.height/2;
+            vertical_line_max = img.width
+            horizontal_line_max = img.height
+        }
+
+        
+        function redraw(){
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            let Idata = ctx.getImageData(0,0,canvas.width, canvas.height);
+            clear();
+            for (let i=0; i<Idata.data.length; i+=4){
+              Idata.data[i]=255-Idata.data[i];
+              Idata.data[i+1]=255-Idata.data[i+1];
+              Idata.data[i+2]=255-Idata.data[i+2];
+              Idata.data[i+3]=255;
+            }
+            ctx.putImageData(Idata,0,0);
+        }
+        
+
+        btn_up.addEventListener('click', function(e){
+            if(horizontal_line_pos+step_horizontal<horizontal_line_max){
+                horizontal_line_pos+=step_horizontal;
+                redraw();
+            }
+        });
+
+        btn_down.addEventListener('click', function(e){
+            if(horizontal_line_pos-step_horizontal>0){
+                horizontal_line_pos-=step_horizontal;
+                redraw();
+            }
+        });
+
+        btn_right.addEventListener('click', function(e){
+            if(vertical_line_pos+step_vertical<vertical_line_max){
+                vertical_line_pos+=step_vertical;
+                redraw();
+            }
+        });
+        btn_right.addEventListener('click', function(e){
+            if(vertical_line_pos-step_vertical>0){
+                vertical_line_pos-=step_vertical;
+                redraw();
+            }
+        });
+
+
+
+
+        //let idata = ctx.getImageData(0,0, canvas.width, canvas.height);
+        //let idata2 = ctx.createImageData(idata);
+        //
+        //let midline = canvas.height/2;
+        //for(let i=0; i<canvas.height; i++){
+        //    for(let j=0; j<canvas.width; j++){
+        //        for(let k=0; k<4; k++){
+        //            idata2.data[4*(i*canvas.width+j)+k] = idata.data[4*(i*canvas.width+j)+k];
+        //        }
+        //    }
+        //}
+        //for(let i=0; i<canvas.height; ++i){
+        //    idata2.data[4*(midline*canvas.width+i)] = 0;
+        //    idata2.data[4*(midline*canvas.width+i)+1] = 0;
+        //    idata2.data[4*(midline*canvas.width+i)+2] = 0;
+        //    idata2.data[4*(midline*canvas.width+i)+3] = 255;
+        //}
+//
+        //ctx.putImageData(idata2, 0, 0, 0, 0, canvas.width, canvas.height);
+
+        //btn.addEventListener('click', function(e){
+        //    let dataURL = canvas2.toDataURL('image/png');
+        //    btn.href = dataURL;
+        //    btn.download = 'test1.png';
+        //});
+
+
+
+    </script>
+</body>
+</html>
