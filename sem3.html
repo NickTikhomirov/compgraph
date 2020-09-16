@@ -1,0 +1,73 @@
+<HTML>
+<HEAD>
+<meta charset = "UTF-8">
+</HEAD>
+<BODY>
+ 
+<canvas width='500', height='500', id='sem03'>
+ 
+ 
+<script>
+    //ogudkov17 - страница на гитхабе
+        var canvas = document.getElementById('sem03');
+        var ctx = canvas.getContext('2d');
+        var colors = ['red', 'green', 'blue'];
+ 
+        function pixel(x, y){
+            ctx.fillRect(x, y, 1, 1);
+        }
+ 
+        function clear(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+        }
+ 
+    function pixel(x, y){
+        ctx.fillRect(x,y,1,1);
+    }
+ 
+    function clear(){
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+    }
+ 
+ 
+ 
+    // алгоритм Брезенхема
+ 
+    function drawLine(x0, y0, x1, y1){
+        if(x0>x1)
+            [x0, y0, x1, y1] = [x1, y1, x0, y0];
+        pixel(x0, y0);
+        pixel(x1, y1);
+        let start = y0;
+        let border_eps1 = (x1-x0)/2;
+        let eps = 0;        
+        let eps1 = y1 - y0;
+        let eps2 = 2*eps1;
+        for(let ix = x0; ix<x1; ++ix ){
+            if(eps>= 2*border_eps1){
+                start+=1;
+                eps -=4*border_eps1;
+            }
+            eps+=eps2; 
+            pixel(ix,start);
+        }       
+    }
+ 
+    let point_index = 0;
+    canvas.addEventListener('click', function(e){
+        if(point_index===0){
+            x0 = e.offsetX;
+            y0 = e.offsetY;
+            point_index = 1;
+        } else {
+            x1 = e.offsetX;
+            y1 = e.offsetY;
+            drawLine(x0, y0, x1, y1);
+            point_index = 0;
+        }
+    });
+</script>
+ 
+ 
+</BODY>
+</HTML>

@@ -1,0 +1,104 @@
+<HTML>
+<BODY> 
+<canvas width='500', height='500', id='hometask03'></canvas>
+
+<script>
+        var canvas = document.getElementById('hometask03');
+        var ctx = canvas.getContext('2d');
+        function pixel(x, y){
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        function debugPixel(x, y){
+            let temp = ctx.fillStyle;
+            ctx.fillStyle = 'red';
+            pixel(x,y);
+            ctx.fillStyle = temp;
+        }
+ 
+        function clear(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+        }
+
+        class CustomPoint{
+            constructor(x, y){
+                this.x=x;
+                this.y=y;
+            }
+            draw(){
+                pixel(this.x,this.y);
+            }
+        }
+
+        class Turtle{
+            constructor(){
+                this.p0 = new CustomPoint(0,0);
+                this.p1 = new CustomPoint(0,0);
+                this.pi = new CustomPoint(0,0);
+            }
+            init(_x0, _y0, _x1, _y1){
+                if(_x0>_x1)
+                    [_x0, _y0, _x1, _y1] = [_x1, _y1, _x0, _y0];
+                _x1-=_x0;
+                _y1-=_y0;
+                this.step = (_y1<0)?-1:1;
+                this.swap = (this.step*_y1)>_x1;
+                this.delta = 2*(this.swap?_x1:this.step*_y1);
+                this.border = this.swap?this.step*_y1:_x1;
+                this.p0.x = _x0;    this.p0.y = _y0;
+                this.p1.x = _x1;    this.p1.y = _y1;
+                this.pi.x = 0;      this.pi.y = 0;
+                this.eps = 0;
+            }
+            draw(){ 
+                pixel(this.pi.x+this.p0.x, this.pi.y+this.p0.y);
+            }
+            start(){
+                while(
+                    this.swap?
+                    this.step*this.pi.y<=this.step*this.p1.y:
+                    this.pi.x<=this.p1.x){
+                    if(this.eps>= this.border){
+                        if(this.swap)
+                            this.pi.x+=1;
+                        else
+                            this.pi.y+=this.step;
+                        this.eps -=2*this.border;
+                    }
+                    this.eps+=this.delta; 
+                    this.draw();
+                    if(this.swap)
+                            this.pi.y+=this.step;
+                        else
+                            this.pi.x+=1;
+                }
+            }
+        }
+
+
+        let x0 = 0;
+        let x1 = 0;
+        let y0 = 0;
+        let y1 = 0;
+        let point_index = 0;
+        let tur = new Turtle();
+
+        canvas.addEventListener('click', function(e){
+        if(point_index===0){
+            x0 = e.offsetX;
+            y0 = e.offsetY;
+            point_index = 1;
+            debugPixel(x0, y0);
+        } else {
+            x1 = e.offsetX;
+            y1 = e.offsetY;
+            debugPixel(x1, y1);
+            tur.init(x0, y0, x1, y1);
+            tur.start();
+            point_index = 0;
+        }
+    });
+</script>
+
+</BODY>
+</HTML>
