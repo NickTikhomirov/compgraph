@@ -1,0 +1,189 @@
+<html>
+<body>
+    <canvas width='500', height='500', id='hometask04'>
+    </canvas>
+    <canvas width='500', height='500', id='hometask04_2'>
+    </canvas>
+
+    <script>
+        // preparation part
+        var canvas = document.getElementById('hometask04');
+        var ctx = canvas.getContext('2d');
+        var canvas2 = document.getElementById('hometask04_2');
+        var ctx2 = canvas2.getContext('2d');
+
+        class Matrix{
+            contents = [];
+            static temp = new Matrix(1,1);      // for multiplication
+            constructor(height, width){
+                this.contents.length = height;
+                for(let i=0; i<height; ++i)
+                    this.contents[i] = this.getZeroVector(width)
+            }
+            resize(height, width){
+                this.contents = new Array(height);
+                for(let i=0; i<height; ++i){
+                    this.contents[i] = new Array(width);
+                }
+                this.clear();
+            }
+            clear(){
+                for(let i = 0; i< this.contents.length; ++i){
+                    for(let j=0; j<this.contents[0].length; ++j){
+                        this.contents[i][j] = 0;
+                    }
+                }
+            }
+
+            
+            multiply(another){
+                this.temp.resize(this.contents.length, another.contents[0].length);  // (a*b) x (b*c) = (a*c)
+                for(let i=0; i< this.contents.length; ++i){                               // row...
+                    for(let j=0; j< another.contents[0].length; ++j){                        // ...by column
+                        for(let z=0; z<this.contents[0].length; ++z){
+                            this.temp.contents[i][j] +=this.contents[i][z]*another.contents[z][j];
+                        }
+                    }
+                }
+                return this.temp;
+            }
+
+            filter_by(another){
+                let result = 0;
+                for(let i = 0; i<this.contents.length; ++i){
+                    for(let j=0; j<this.contents[0].length; ++j){
+                        result+=this.contents[i][j]*another.contents[i][j];
+                    }
+                }
+                return result;
+            }
+
+            getZeroVector(length){
+                let result = [];
+                for(let i=0; i<length; ++i)
+                    result.push(0);
+                return result;
+            }
+        }
+
+
+        function pixel(x, y){
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        function clear(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+        }
+
+
+
+        class DataCarrier{
+            constructor(_data, arr_width, arr_height){
+                this.data = _data;
+                this.arr_width = arr_width;
+                this.arr_height = arr_height;
+            }
+
+            static win = new Matrix(3,3);           // i'll abuse the fact that all matrixes are 3x3
+
+            transfrom(mat){                         // this returns transformed data
+                let size = mat.contents.length;
+                let iterations = this.arr_width*this.arr_height;
+                let result = new Uint8ClampedArray(this.data.data.length);
+                let result_data = ctx.createImageData(this.arr_width,  this.arr_height);
+                for(let i=0; i<iterations; ++i){
+                    for(let ch=0; ch<4-1; ++ch){
+                        this.getWindow(size, size, i, ch);           // puts in this.win
+                        result_data.data[4*i+ch] = DataCarrier.win.filter_by(mat);
+                    }
+                    result_data.data[4*i+3] = this.data.data[4*i+3];
+                }
+                return result_data;
+            }
+            getWindow(height, width, pos, ch){      // window is a matrix height x width
+                //DataCarrier.win.resize(height, width);
+                DataCarrier.win.clear();
+                let step_left = Math.floor(width/2);
+                let step_top = Math.floor(height/2);
+                let pos_w = pos%this.arr_width;
+                let pos_h = Math.floor(pos/this.arr_width);
+                for(let ih=0; ih<height; ++ih){
+                    for(let iw=0; iw<width; ++iw){
+                        DataCarrier.win.contents[ih][iw] = this.getDot(pos_h-step_left+ih, pos_w-step_top+iw,ch);
+                    }
+                }
+            }
+            getDot(height, width, ch){              // dot is monocolor so dot is an int
+                if(height<0 || width <0 || height>this.arr_height-1 || width>this.arr_width-1)
+                    return 0;
+                return this.data.data[(this.arr_width*height+width)*4+ch];
+            }
+        }
+    </script>
+
+
+
+
+
+
+    <script>
+
+        let img = new Image();
+        let data;
+        let newdata;
+        let seconddata;
+        let ma = new Matrix(3,3)
+        let ma2 = new Matrix(3,3)
+        var carrier;
+        ma.contents = [
+            [-1, 0, 1], [-2, 0, 2], [-1, 0, 1]
+        ];
+        ma2.contents = [
+            [-1, -2, -1], [0, 0, 0], [1, 2, 1]
+        ];
+
+
+        function clever_merge(arr1, arr2){
+            let max = [0,0,0];
+            let length = Math.floor(arr1.length/4);
+            for(let i = 0; i<length; ++i){
+                for(let ch=0; ch<3; ++ch){
+                    arr1[4*i+ch]*=arr2[4*i+ch];
+                    arr1[4*i+ch]=Math.sqrt(arr1[4*i+ch]);
+                    arr1[4*i+ch] = Math.floor(arr1[4*i+ch]);
+                    max[ch] = Math.max(max[ch], arr1[4*i+ch]);
+                }
+            }
+
+            for(let i = 0; i<length; ++i){
+                for(let ch=0; ch<3; ++ch){
+                    arr1[4*i+ch]/=max[ch];
+                    arr1[4*i+ch] = Math.floor(arr1[4*i+ch]);
+                }
+            }
+            //for(let i = 0; i<length; ++i){
+            //    for(let ch=0; ch<3; ++ch){
+            //        arr2[4*i+ch]=Math.max(arr1[4*i+ch], arr2[4*i+ch]);
+            //    }
+            //}
+        }
+
+
+
+        img.crossOrigin = 'Anonymous';
+        img.src = 'https://raw.githubusercontent.com/NickTikhomirov/compgraph/master/hometask03/pic.jpg';
+        img.onload = function(){
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            data = ctx.getImageData(0,0,canvas.width, canvas.height);
+            clear();
+            carrier = new DataCarrier(data, canvas.width, canvas.height);
+            newdata = carrier.transfrom(ma);
+            ctx.putImageData(newdata,0,0);
+            seconddata = carrier.transfrom(ma2);
+            clever_merge(newdata.data, seconddata.data);
+            ctx2.putImageData(newdata,0,0);
+        }
+
+    </script>
+</body>
+</html>
