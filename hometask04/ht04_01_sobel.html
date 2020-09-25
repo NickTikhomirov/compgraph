@@ -101,7 +101,6 @@
                 return result_data;
             }
             getWindow(height, width, pos, ch){      // window is a matrix height x width
-                //DataCarrier.win.resize(height, width);
                 DataCarrier.win.clear();
                 let step_left = Math.floor(width/2);
                 let step_top = Math.floor(height/2);
@@ -119,6 +118,20 @@
                 return this.data.data[(this.arr_width*height+width)*4+ch];
             }
         }
+
+        function GrayData(data){
+            let result = ctx.createImageData(canvas.width, canvas.height);
+            let length = Math.floor(data.data.length/4)
+            for(let i=0; i<length; ++i){
+                let temp = Math.floor((data.data[4*i+0]+data.data[4*i+1]+data.data[4*i+2])/3);
+                result.data[4*i+0] = temp;
+                result.data[4*i+1] = temp;
+                result.data[4*i+2] = temp;
+                result.data[4*i+3] = data.data[4*i+3];
+            }
+            return result;
+        }
+
     </script>
 
 
@@ -130,42 +143,42 @@
 
         let img = new Image();
         let data;
+        let data1;
         let newdata;
         let seconddata;
         let ma = new Matrix(3,3)
         let ma2 = new Matrix(3,3)
         var carrier;
         ma.contents = [
-            [-1, 0, 1], [-2, 0, 2], [-1, 0, 1]
+            [1, 0, -1], [2, 0, -2], [1, 0, -1]
         ];
         ma2.contents = [
-            [-1, -2, -1], [0, 0, 0], [1, 2, 1]
+            [1, 2, 1], [0, 0, 0], [-1, -2, -1]
         ];
 
 
         function clever_merge(arr1, arr2){
             let max = [0,0,0];
+            let lastrow = canvas.width*(canvas.height-1);
             let length = Math.floor(arr1.length/4);
             for(let i = 0; i<length; ++i){
                 for(let ch=0; ch<3; ++ch){
-                    arr1[4*i+ch]*=arr2[4*i+ch];
+                    arr1[4*i+ch]=arr1[4*i+ch]*arr1[4*i+ch]+arr2[4*i+ch]*arr2[4*i+ch];
                     arr1[4*i+ch]=Math.sqrt(arr1[4*i+ch]);
                     arr1[4*i+ch] = Math.floor(arr1[4*i+ch]);
-                    max[ch] = Math.max(max[ch], arr1[4*i+ch]);
+                    let bymod = i%canvas.width;
+                    if(bymod===0 || bymod===canvas.width-1 || bymod===i || bymod==lastrow);
+                    else
+                        max[ch] = Math.max(max[ch], arr1[4*i+ch]);
                 }
             }
 
             for(let i = 0; i<length; ++i){
                 for(let ch=0; ch<3; ++ch){
-                    arr1[4*i+ch]/=max[ch];
+                    arr1[4*i+ch]/=max[ch]/255;
                     arr1[4*i+ch] = Math.floor(arr1[4*i+ch]);
                 }
             }
-            //for(let i = 0; i<length; ++i){
-            //    for(let ch=0; ch<3; ++ch){
-            //        arr2[4*i+ch]=Math.max(arr1[4*i+ch], arr2[4*i+ch]);
-            //    }
-            //}
         }
 
 
@@ -175,8 +188,8 @@
         img.onload = function(){
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             data = ctx.getImageData(0,0,canvas.width, canvas.height);
-            clear();
-            carrier = new DataCarrier(data, canvas.width, canvas.height);
+            let data1 = GrayData(data);
+            carrier = new DataCarrier(data1, canvas.width, canvas.height);
             newdata = carrier.transfrom(ma);
             ctx.putImageData(newdata,0,0);
             seconddata = carrier.transfrom(ma2);
