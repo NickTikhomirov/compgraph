@@ -4,6 +4,15 @@
     </canvas>
     <canvas width='500', height='500', id='hometask04_2'>
     </canvas>
+    <canvas width='500', height='500', id='hometask04_3'>
+    </canvas>
+    <canvas width='500', height='500', id='hometask04_4'>
+    </canvas>
+    <canvas width='500', height='500', id='hometask04_5'>
+    </canvas>
+    <canvas width='500', height='500', id='hometask04_6'>
+    </canvas>
+
 
     <script>
         // preparation part
@@ -11,10 +20,17 @@
         var ctx = canvas.getContext('2d');
         var canvas2 = document.getElementById('hometask04_2');
         var ctx2 = canvas2.getContext('2d');
+        var canvas3 = document.getElementById('hometask04_3');
+        var ctx3 = canvas3.getContext('2d');
+        var canvas4 = document.getElementById('hometask04_4');
+        var ctx4 = canvas4.getContext('2d');
+        var canvas5 = document.getElementById('hometask04_5');
+        var ctx5 = canvas5.getContext('2d');
+        var canvas6 = document.getElementById('hometask04_6');
+        var ctx6 = canvas6.getContext('2d');
 
         class Matrix{
             contents = [];
-            static temp = new Matrix(1,1);      // for multiplication
             constructor(height, width){
                 this.contents.length = height;
                 for(let i=0; i<height; ++i)
@@ -35,24 +51,21 @@
                 }
             }
 
-            
-            multiply(another){
-                this.temp.resize(this.contents.length, another.contents[0].length);  // (a*b) x (b*c) = (a*c)
-                for(let i=0; i< this.contents.length; ++i){                               // row...
-                    for(let j=0; j< another.contents[0].length; ++j){                        // ...by column
-                        for(let z=0; z<this.contents[0].length; ++z){
-                            this.temp.contents[i][j] +=this.contents[i][z]*another.contents[z][j];
-                        }
-                    }
-                }
-                return this.temp;
-            }
-
             filter_by(another){
                 let result = 0;
                 for(let i = 0; i<this.contents.length; ++i){
                     for(let j=0; j<this.contents[0].length; ++j){
-                        result+=this.contents[i][j]*another.contents[i][j];
+                        result+= this.contents[i][j]*another.contents[i][j];
+                    }
+                }
+                result= Math.abs(result);           // this thing is very important
+                return result;
+            }
+            lazy_filter_by(another){
+                let result = 0;
+                for(let i = 0; i<this.contents.length; ++i){
+                    for(let j=0; j<this.contents[0].length; ++j){
+                        result+= this.contents[i][j]*another.contents[i][j];
                     }
                 }
                 return result;
@@ -67,6 +80,19 @@
         }
 
 
+        let Sob_x = new Matrix(3,3);
+        let Sob_y = new Matrix(3,3);
+        let x_Sob = new Matrix(3,3);
+        let y_Sob = new Matrix(3,3);
+        let mysob1 = new Matrix(3,3);
+        let mysob2 = new Matrix(3,3);
+        let dyasob1 = new Matrix(3,3);
+        let dyasob2 = new Matrix(3,3);
+        let widesob1 = new Matrix(3,3);
+        let widesob2 = new Matrix(3,3);
+
+
+
         function pixel(x, y){
             ctx.fillRect(x, y, 1, 1);
         }
@@ -74,7 +100,56 @@
         function clear(){
             ctx.clearRect(0,0,canvas.width, canvas.height);
         }
+        Sob_x.contents = [         // default X matrix for Sobel
+            [-1, 0, 1], 
+            [-2, 0, 2], 
+            [-1, 0, 1]
+        ];
+        
+        Sob_y.contents = [
+            [-1, -2, -1],       // default Y matrix for Sobel
+            [0, 0, 0], 
+            [1, 2, 1]
+        ];
 
+        x_Sob.contents = [        // mirror X matrix for Sobel
+            [1, 0, -1], 
+            [2, 0, -2], 
+            [1, 0, -1]
+        ];
+        
+        x_Sob.contents = [       // mirror Y matrix for Sobel
+            [1, 2, 1],
+            [0, 0, 0], 
+            [-1, -2, -1]
+        ];
+
+        mysob1.contents = [     // these two matrixes are able to replace Sobel's without need in (very important) Math.abs
+            [-1, -2, -1], 
+            [-2, 0, 2], 
+            [1, 2, 1]
+        ];
+        
+        mysob2.contents = [     // ----------------------------||----------------------------
+            [1, 2, 1], 
+            [2, 0, -2], 
+            [-1, -2, -1]
+        ];
+
+        dyasob1.contents = [     // another funny thing (found at the internet) --- diagonal Sobels
+            [-1, -2, 0], 
+            [-2, 0, 2], 
+            [0, 2, 1]
+        ];
+
+        dyasob2.contents = [     // ----------------------------||----------------------------
+            [0, 2, 1], 
+            [-2, 0, 2], 
+            [-1, -2, 0]
+        ];
+
+        
+        
 
 
         class DataCarrier{
@@ -86,29 +161,28 @@
 
             static win = new Matrix(3,3);           // i'll abuse the fact that all matrixes are 3x3
 
-            transfrom(mat){                         // this returns transformed data
+            transfrom(mat, flag){                         // this returns transformed data
                 let size = mat.contents.length;
                 let iterations = this.arr_width*this.arr_height;
-                let result = new Uint8ClampedArray(this.data.data.length);
                 let result_data = ctx.createImageData(this.arr_width,  this.arr_height);
-                for(let i=0; i<iterations; ++i){
-                    for(let ch=0; ch<4-1; ++ch){
-                        this.getWindow(size, size, i, ch);           // puts in this.win
-                        result_data.data[4*i+ch] = DataCarrier.win.filter_by(mat);
+                for(let ih =0; ih<this.arr_height; ++ih){
+                    for(let iw=0; iw<this.arr_width; ++iw){
+                        for(let ch=0; ch<4-1; ++ch){
+                            this.getWindow(size, size, ih, iw, ch);           // puts in this.win
+                            result_data.data[4*(ih*this.arr_width + iw)+ch] = flag?DataCarrier.win.filter_by(mat):DataCarrier.win.lazy_filter_by(mat);
+                        }
+                        result_data.data[4*(ih*this.arr_width + iw)+3] = this.data.data[4*(ih*this.arr_width + iw)+3];
                     }
-                    result_data.data[4*i+3] = this.data.data[4*i+3];
                 }
                 return result_data;
             }
-            getWindow(height, width, pos, ch){      // window is a matrix height x width
+            getWindow(height, width, pos_h, pos_w, ch){      // window is a matrix height x width
                 DataCarrier.win.clear();
                 let step_left = Math.floor(width/2);
                 let step_top = Math.floor(height/2);
-                let pos_w = pos%this.arr_width;
-                let pos_h = Math.floor(pos/this.arr_width);
                 for(let ih=0; ih<height; ++ih){
                     for(let iw=0; iw<width; ++iw){
-                        DataCarrier.win.contents[ih][iw] = this.getDot(pos_h-step_left+ih, pos_w-step_top+iw,ch);
+                        DataCarrier.win.contents[ih][iw] = this.getDot(pos_h-step_top+ih, pos_w-step_left+iw,ch);
                     }
                 }
             }
@@ -140,47 +214,33 @@
 
 
     <script>
-
         let img = new Image();
         let data;
         let data1;
         let newdata;
         let seconddata;
-        let ma = new Matrix(3,3)
-        let ma2 = new Matrix(3,3)
+        
         var carrier;
-        ma.contents = [
-            [1, 0, -1], [2, 0, -2], [1, 0, -1]
-        ];
-        ma2.contents = [
-            [1, 2, 1], [0, 0, 0], [-1, -2, -1]
-        ];
-
-
+        
         function clever_merge(arr1, arr2){
             let max = [0,0,0];
             let lastrow = canvas.width*(canvas.height-1);
             let length = Math.floor(arr1.length/4);
             for(let i = 0; i<length; ++i){
                 for(let ch=0; ch<3; ++ch){
-                    arr1[4*i+ch]=arr1[4*i+ch]*arr1[4*i+ch]+arr2[4*i+ch]*arr2[4*i+ch];
-                    arr1[4*i+ch]=Math.sqrt(arr1[4*i+ch]);
-                    arr1[4*i+ch] = Math.floor(arr1[4*i+ch]);
+                    arr1[4*i+ch]=Math.floor(Math.sqrt(arr1[4*i+ch]*arr1[4*i+ch]+arr2[4*i+ch]*arr2[4*i+ch]));
+                    arr1[4*i+ch]=arr1[4*i+ch];
                     let bymod = i%canvas.width;
                     if(bymod===0 || bymod===canvas.width-1 || bymod===i || bymod==lastrow);
                     else
                         max[ch] = Math.max(max[ch], arr1[4*i+ch]);
                 }
             }
-
-            for(let i = 0; i<length; ++i){
-                for(let ch=0; ch<3; ++ch){
-                    arr1[4*i+ch]/=max[ch]/255;
-                    arr1[4*i+ch] = Math.floor(arr1[4*i+ch]);
-                }
-            }
+            
+            for(let i = 0; i<length; ++i)
+                for(let ch=0; ch<3; ++ch)
+                    arr1[4*i+ch] = Math.floor(arr1[4*i+ch]/max[ch]*255);
         }
-
 
 
         img.crossOrigin = 'Anonymous';
@@ -188,13 +248,36 @@
         img.onload = function(){
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             data = ctx.getImageData(0,0,canvas.width, canvas.height);
-            let data1 = GrayData(data);
-            carrier = new DataCarrier(data1, canvas.width, canvas.height);
-            newdata = carrier.transfrom(ma);
-            ctx.putImageData(newdata,0,0);
-            seconddata = carrier.transfrom(ma2);
+            carrier = new DataCarrier(data, canvas.width, canvas.height);
+            
+            newdata = carrier.transfrom(Sob_x, true);
+            seconddata = carrier.transfrom(Sob_y, true);
             clever_merge(newdata.data, seconddata.data);
             ctx2.putImageData(newdata,0,0);
+            
+            newdata = carrier.transfrom(Sob_x, false);
+            seconddata = carrier.transfrom(Sob_y, false);
+            clever_merge(newdata.data, seconddata.data);
+            seconddata = carrier.transfrom(x_Sob);
+            clever_merge(newdata.data, seconddata.data);
+            seconddata = carrier.transfrom(y_Sob);
+            clever_merge(newdata.data, seconddata.data);
+            ctx3.putImageData(newdata, 0, 0);
+
+            newdata = carrier.transfrom(mysob1, false);
+            seconddata = carrier.transfrom(mysob2, false);
+            clever_merge(newdata.data, seconddata.data);
+            ctx4.putImageData(newdata,0,0);
+
+            newdata = carrier.transfrom(dyasob1, true);
+            seconddata = carrier.transfrom(dyasob2, true);
+            clever_merge(newdata.data, seconddata.data);
+            ctx5.putImageData(newdata,0,0);
+
+            newdata = carrier.transfrom(Sob_x, false);
+            seconddata = carrier.transfrom(Sob_y, false);
+            clever_merge(newdata.data, seconddata.data);
+            ctx6.putImageData(newdata,0,0);
         }
 
     </script>
