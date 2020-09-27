@@ -41,7 +41,6 @@
                         result+= this.contents[i][j]*another.contents[i][j];
                     }
                 }
-                //result= Math.abs(result);           // this thing is very important
                 return result;
             }
 
@@ -63,7 +62,7 @@
 
             static win = new Matrix(5,5);           // yes, still hardcoded
 
-            transfrom(mat, flag){                         // this returns transformed data
+            transfrom(mat){                         // this returns transformed data
                 let result_data = ctx.createImageData(this.arr_width,  this.arr_height);
                 this.window_size = mat.contents.length;
                 this.step_left = Math.floor(this.window_size/2);
@@ -73,7 +72,7 @@
                     for(let iw=0; iw<this.arr_width; ++iw){
                         for(let ch=0; ch<4-1; ++ch){
                             this.getWindow(ih, iw, ch);           // puts in this.win
-                            result_data.data[4*(ih*this.arr_width + iw)+ch] = optionalAbs(DataCarrier.win.filter_by(mat) ,flag);
+                            result_data.data[4*(ih*this.arr_width + iw)+ch] = (DataCarrier.win.filter_by(mat));
                         }
                         result_data.data[4*(ih*this.arr_width + iw)+3] = this.data.data[4*(ih*this.arr_width + iw)+3];
                     }
@@ -121,7 +120,7 @@
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             let data = ctx.getImageData(0,0,canvas.width, canvas.height);
             let carrier = new DataCarrier(data, canvas.width, canvas.height);
-            let newdata = carrier.transfrom(GAUSS, true);
+            let newdata = carrier.transfrom(GAUSS);
             ctx2.putImageData(newdata,0,0);
         }
 
