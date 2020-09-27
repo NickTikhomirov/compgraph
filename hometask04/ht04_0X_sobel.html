@@ -1,10 +1,16 @@
 <html>
 <body>
-    <canvas width='500', height='500', id='hometask04'>
+    <canvas width='1400', height='700', id='hometask04'>
     </canvas>
-    <canvas width='500', height='500', id='hometask04_2'>
+    <canvas width='1400', height='700', id='hometask04_2'>
     </canvas>
-    <canvas width='500', height='500', id='hometask04_3'>
+    <canvas width='1400', height='700', id='hometask04_3'>
+    </canvas>
+    <canvas width='1400', height='700', id='hometask04_4'>
+    </canvas>
+    <canvas width='1400', height='700', id='hometask04_5'>
+    </canvas>
+    <canvas width='1400', height='700', id='hometask04_6'>
     </canvas>
 
 
@@ -15,21 +21,12 @@
         var ctx2 = canvas2.getContext('2d');
         var canvas3 = document.getElementById('hometask04_3');
         var ctx3 = canvas3.getContext('2d');
-
-        function prepare(c){
-            c.fillStyle = "#0F0";
-            c.strokeStyle = "#F00";
-            c.font = "italic 30pt Arial";
-        }
-
-        function initText(){
-            prepare(ctx);
-            prepare(ctx2);
-            prepare(ctx3);
-            ctx.fillText("Base", 10, 35);
-            ctx2.fillText("Default Sobel Operator", 10, 35);
-            ctx3.fillText("Diagonal Sobel Operator", 10, 35);
-        }
+        var canvas4 = document.getElementById('hometask04_4');
+        var ctx4 = canvas4.getContext('2d');
+        var canvas5 = document.getElementById('hometask04_5');
+        var ctx5 = canvas5.getContext('2d');
+        var canvas6 = document.getElementById('hometask04_6');
+        var ctx6 = canvas6.getContext('2d');
 
         class Matrix{
             contents = [];
@@ -72,6 +69,70 @@
         }
 
 
+        let Sob_x = new Matrix(3,3);
+        let Sob_y = new Matrix(3,3);
+        let x_Sob = new Matrix(3,3);
+        let y_Sob = new Matrix(3,3);
+        let mysob1 = new Matrix(3,3);
+        let mysob2 = new Matrix(3,3);
+        let dyasob1 = new Matrix(3,3);
+        let dyasob2 = new Matrix(3,3);
+
+        Sob_x.contents = [         // default X matrix for Sobel
+            [-1, 0, 1], 
+            [-2, 0, 2], 
+            [-1, 0, 1]
+        ];
+        
+        Sob_y.contents = [
+            [-1, -2, -1],       // default Y matrix for Sobel
+            [0, 0, 0], 
+            [1, 2, 1]
+        ];
+
+        x_Sob.contents = [        // mirror X matrix for Sobel
+            [1, 0, -1], 
+            [2, 0, -2], 
+            [1, 0, -1]
+        ];
+        
+        y_Sob.contents = [       // mirror Y matrix for Sobel
+            [1, 2, 1],
+            [0, 0, 0], 
+            [-1, -2, -1]
+        ];
+
+        mysob1.contents = [     // these two matrixes are able to replace Sobel's without need in (very important) Math.abs
+            [-1, -2, -1], 
+            [-2, 0, 2], 
+            [1, 2, 1]
+        ];
+        
+        mysob2.contents = [     // ----------------------------||----------------------------
+            [1, 2, 1], 
+            [2, 0, -2], 
+            [-1, -2, -1]
+        ];
+
+        dyasob1.contents = [     // another funny thing (found at the internet) --- diagonal Sobels
+            [-1, -2, 0], 
+            [-2, 0, 2], 
+            [0, 2, 1]
+        ];
+
+        dyasob2.contents = [     // ----------------------------||----------------------------
+            [0, 2, 1], 
+            [-2, 0, 2], 
+            [-1, -2, 0]
+        ];
+
+        
+        function optionalAbs(num, flag){
+            if(flag)
+                return Math.abs(num);
+            return num;
+        }
+
 
         class DataCarrier{
             constructor(_data, arr_width, arr_height){
@@ -82,7 +143,7 @@
 
             static win = new Matrix(3,3);           // i'll abuse the fact that all matrixes are 3x3
 
-            transfrom(mat){                         // this returns transformed data
+            transfrom(mat, flag){                         // this returns transformed data
                 let result_data = ctx.createImageData(this.arr_width,  this.arr_height);
                 this.window_size = mat.contents.length;
                 this.step_left = Math.floor(this.window_size/2);
@@ -92,7 +153,7 @@
                     for(let iw=0; iw<this.arr_width; ++iw){
                         for(let ch=0; ch<4-1; ++ch){
                             this.getWindow(ih, iw, ch);           // puts in this.win
-                            result_data.data[4*(ih*this.arr_width + iw)+ch] = Math.abs(DataCarrier.win.filter_by(mat));
+                            result_data.data[4*(ih*this.arr_width + iw)+ch] = optionalAbs(DataCarrier.win.filter_by(mat) ,flag);
                         }
                         result_data.data[4*(ih*this.arr_width + iw)+3] = this.data.data[4*(ih*this.arr_width + iw)+3];
                     }
@@ -114,7 +175,6 @@
             }
         }
 
-
         function clever_merge(arr1, arr2){
             let max = [0,0,0];
             let lastrow = canvas.width*(canvas.height-1);
@@ -134,58 +194,45 @@
                 for(let ch=0; ch<3; ++ch)
                     arr1[4*i+ch] = Math.floor(arr1[4*i+ch]/max[ch]*255);
         }
-// ----------------------------------------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------------------------------------
 
         let img = new Image();
-        let Sob_x = new Matrix(3,3);
-        let Sob_y = new Matrix(3,3);
-        let dyasob1 = new Matrix(3,3);
-        let dyasob2 = new Matrix(3,3);
-
-        Sob_x.contents = [         // default X matrix for Sobel
-            [-1, 0, 1], 
-            [-2, 0, 2], 
-            [-1, 0, 1]
-        ];
-        
-        Sob_y.contents = [
-            [-1, -2, -1],       // default Y matrix for Sobel
-            [0, 0, 0], 
-            [1, 2, 1]
-        ];
-
-        dyasob1.contents = [     // digonal Sobel Matrix I've found at the internet
-            [-1, -2, 0], 
-            [-2, 0, 2], 
-            [0, 2, 1]
-        ];
-
-        dyasob2.contents = [     // digonal Sobel Matrix I've found at the internet
-            [0, 2, 1], 
-            [-2, 0, 2], 
-            [-1, -2, 0]
-        ];
 
 
         img.crossOrigin = 'Anonymous';
-        img.src = 'https://raw.githubusercontent.com/NickTikhomirov/BMSTU_WORK/master/Pictures/other/egg1.jpg';
+        img.src = 'https://raw.githubusercontent.com/NickTikhomirov/compgraph/master/hometask04/doggo.png';
         img.onload = function(){
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             let data = ctx.getImageData(0,0,canvas.width, canvas.height);
             let carrier = new DataCarrier(data, canvas.width, canvas.height);
             
-            let newdata = carrier.transfrom(Sob_x);
-            let seconddata = carrier.transfrom(Sob_y);
+            let newdata = carrier.transfrom(Sob_x, true);
+            let seconddata = carrier.transfrom(Sob_y, true);
             clever_merge(newdata.data, seconddata.data);
             ctx2.putImageData(newdata,0,0);
             
-            newdata = carrier.transfrom(dyasob1);
-            seconddata = carrier.transfrom(dyasob2);
+            newdata = carrier.transfrom(Sob_x, false);
+            seconddata = carrier.transfrom(Sob_y, false);
             clever_merge(newdata.data, seconddata.data);
-            ctx3.putImageData(newdata,0,0);
-            initText();
+            seconddata = carrier.transfrom(x_Sob);
+            clever_merge(newdata.data, seconddata.data);
+            seconddata = carrier.transfrom(y_Sob);
+            clever_merge(newdata.data, seconddata.data);
+            ctx3.putImageData(newdata, 0, 0);
+
+            newdata = carrier.transfrom(mysob1, false);
+            seconddata = carrier.transfrom(mysob2, false);
+            clever_merge(newdata.data, seconddata.data);
+            ctx4.putImageData(newdata,0,0);
+
+            newdata = carrier.transfrom(dyasob1, true);
+            seconddata = carrier.transfrom(dyasob2, true);
+            clever_merge(newdata.data, seconddata.data);
+            ctx5.putImageData(newdata,0,0);
+
+            newdata = carrier.transfrom(Sob_x, false);
+            seconddata = carrier.transfrom(Sob_y, false);
+            clever_merge(newdata.data, seconddata.data);
+            ctx6.putImageData(newdata,0,0);
         }
 
     </script>

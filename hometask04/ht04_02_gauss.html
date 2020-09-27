@@ -1,35 +1,16 @@
 <html>
 <body>
-    <canvas width='500', height='500', id='hometask04'>
+    <canvas width='500', height='500', id='hometask04_also'>
     </canvas>
-    <canvas width='500', height='500', id='hometask04_2'>
-    </canvas>
-    <canvas width='500', height='500', id='hometask04_3'>
+    <canvas width='500', height='500', id='hometask04_als1'>
     </canvas>
 
 
     <script>
-        var canvas = document.getElementById('hometask04');
+        var canvas = document.getElementById('hometask04_also');
         var ctx = canvas.getContext('2d');
-        var canvas2 = document.getElementById('hometask04_2');
+        var canvas2 = document.getElementById('hometask04_als1');
         var ctx2 = canvas2.getContext('2d');
-        var canvas3 = document.getElementById('hometask04_3');
-        var ctx3 = canvas3.getContext('2d');
-
-        function prepare(c){
-            c.fillStyle = "#0F0";
-            c.strokeStyle = "#F00";
-            c.font = "italic 30pt Arial";
-        }
-
-        function initText(){
-            prepare(ctx);
-            prepare(ctx2);
-            prepare(ctx3);
-            ctx.fillText("Base", 10, 35);
-            ctx2.fillText("Default Sobel Operator", 10, 35);
-            ctx3.fillText("Diagonal Sobel Operator", 10, 35);
-        }
 
         class Matrix{
             contents = [];
@@ -60,6 +41,7 @@
                         result+= this.contents[i][j]*another.contents[i][j];
                     }
                 }
+                //result= Math.abs(result);           // this thing is very important
                 return result;
             }
 
@@ -72,7 +54,6 @@
         }
 
 
-
         class DataCarrier{
             constructor(_data, arr_width, arr_height){
                 this.data = _data;
@@ -80,9 +61,9 @@
                 this.arr_height = arr_height;
             }
 
-            static win = new Matrix(3,3);           // i'll abuse the fact that all matrixes are 3x3
+            static win = new Matrix(5,5);           // yes, still hardcoded
 
-            transfrom(mat){                         // this returns transformed data
+            transfrom(mat, flag){                         // this returns transformed data
                 let result_data = ctx.createImageData(this.arr_width,  this.arr_height);
                 this.window_size = mat.contents.length;
                 this.step_left = Math.floor(this.window_size/2);
@@ -92,7 +73,7 @@
                     for(let iw=0; iw<this.arr_width; ++iw){
                         for(let ch=0; ch<4-1; ++ch){
                             this.getWindow(ih, iw, ch);           // puts in this.win
-                            result_data.data[4*(ih*this.arr_width + iw)+ch] = Math.abs(DataCarrier.win.filter_by(mat));
+                            result_data.data[4*(ih*this.arr_width + iw)+ch] = optionalAbs(DataCarrier.win.filter_by(mat) ,flag);
                         }
                         result_data.data[4*(ih*this.arr_width + iw)+3] = this.data.data[4*(ih*this.arr_width + iw)+3];
                     }
@@ -114,78 +95,34 @@
             }
         }
 
-
-        function clever_merge(arr1, arr2){
-            let max = [0,0,0];
-            let lastrow = canvas.width*(canvas.height-1);
-            let length = Math.floor(arr1.length/4);
-            for(let i = 0; i<length; ++i){
-                for(let ch=0; ch<3; ++ch){
-                    arr1[4*i+ch]=Math.floor(Math.sqrt(arr1[4*i+ch]*arr1[4*i+ch]+arr2[4*i+ch]*arr2[4*i+ch]));
-                    arr1[4*i+ch]=arr1[4*i+ch];
-                    let bymod = i%canvas.width;
-                    if(bymod===0 || bymod===canvas.width-1 || bymod===i || bymod==lastrow);
-                    else
-                        max[ch] = Math.max(max[ch], arr1[4*i+ch]);
-                }
-            }
-            
-            for(let i = 0; i<length; ++i)
-                for(let ch=0; ch<3; ++ch)
-                    arr1[4*i+ch] = Math.floor(arr1[4*i+ch]/max[ch]*255);
-        }
 // ----------------------------------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------------------
 
         let img = new Image();
-        let Sob_x = new Matrix(3,3);
-        let Sob_y = new Matrix(3,3);
-        let dyasob1 = new Matrix(3,3);
-        let dyasob2 = new Matrix(3,3);
 
-        Sob_x.contents = [         // default X matrix for Sobel
-            [-1, 0, 1], 
-            [-2, 0, 2], 
-            [-1, 0, 1]
-        ];
-        
-        Sob_y.contents = [
-            [-1, -2, -1],       // default Y matrix for Sobel
-            [0, 0, 0], 
-            [1, 2, 1]
-        ];
+        const sigma = 1;
+        let offset = 2;
+        let GAUSS = new Matrix(5,5);
+        function G(x, y){
+            return Math.exp((x*x+y*y)/(-2*sigma*sigma)) / (2*Math.PI*sigma*sigma)
+        }
+        for(let ix=-2; ix<3; ix++){
+            for(let iy=-2; iy<3; iy++){
+                GAUSS.contents[iy+offset][ix+offset] = G(ix, iy)       // G(0,0) in center
+            }
+        }
 
-        dyasob1.contents = [     // digonal Sobel Matrix I've found at the internet
-            [-1, -2, 0], 
-            [-2, 0, 2], 
-            [0, 2, 1]
-        ];
-
-        dyasob2.contents = [     // digonal Sobel Matrix I've found at the internet
-            [0, 2, 1], 
-            [-2, 0, 2], 
-            [-1, -2, 0]
-        ];
 
 
         img.crossOrigin = 'Anonymous';
-        img.src = 'https://raw.githubusercontent.com/NickTikhomirov/BMSTU_WORK/master/Pictures/other/egg1.jpg';
+        img.src = 'https://raw.githubusercontent.com/NickTikhomirov/compgraph/master/hometask04/pic.jpeg';
         img.onload = function(){
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             let data = ctx.getImageData(0,0,canvas.width, canvas.height);
             let carrier = new DataCarrier(data, canvas.width, canvas.height);
-            
-            let newdata = carrier.transfrom(Sob_x);
-            let seconddata = carrier.transfrom(Sob_y);
-            clever_merge(newdata.data, seconddata.data);
+            let newdata = carrier.transfrom(GAUSS, true);
             ctx2.putImageData(newdata,0,0);
-            
-            newdata = carrier.transfrom(dyasob1);
-            seconddata = carrier.transfrom(dyasob2);
-            clever_merge(newdata.data, seconddata.data);
-            ctx3.putImageData(newdata,0,0);
-            initText();
         }
 
     </script>
