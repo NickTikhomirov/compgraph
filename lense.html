@@ -1,0 +1,65 @@
+<HTML>
+<BODY> 
+<canvas width='500', height='500', id='lense'></canvas>
+<canvas width='500', height='500', id='result'></canvas>
+
+<script>
+        var canvas = document.getElementById('lense');
+        var ctx = canvas.getContext('2d');
+        var canvas2 = document.getElementById('result');
+        var ctx2 = canvas2.getContext('2d');
+
+        let img = new Image();
+        let data;
+        let result_data = ctx.createImageData(canvas.width,  canvas.height);
+        img.crossOrigin = 'Anonymous';
+        img.src = 'https://raw.githubusercontent.com/NickTikhomirov/BMSTU_WORK/master/Pictures/other/egg1.jpg';
+        img.onload = function(){
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            data = ctx.getImageData(0,0,canvas.width, canvas.height);
+        };
+
+
+        let M = 50;
+        let radius = 50;
+        function F(r){
+            return 1+Math.abs(Math.cos(r/M)*Math.min(Math.pow(r/M, -1), 10)/radius/2);
+        }
+
+        function compose(x, y, ch){
+            return (y*canvas.width+x)*4+ch;
+        }
+
+        function lense(x,y){
+            for(let ih=0; ih<canvas.height; ih++){
+                for(let iw=0; iw<canvas.width; iw++){
+                    let range = Math.sqrt((ih-y)*(ih-y)+(iw-x)*(iw-x));
+                    //if(range>radius)
+                    //    for(let ch=0; ch<3; ch++)
+                    //        result_data.data[compose(iw,ih,ch)] = data.data[compose(iw,ih,ch)];
+                    //else 
+                    {
+                        let f = F(range);
+                        for(let ch=0; ch<3; ch++){
+                            result_data.data[compose(iw,ih,ch)] = 
+                            data.data[compose(
+                                radius+Math.round((iw-radius)*f),
+                                radius+Math.round((ih-radius)*f),
+                                ch
+                                )];
+                        }
+                    }
+                    result_data.data[(ih*canvas.width+iw)*4+3] = data.data[(ih*canvas.width+iw)*4+3];
+                }
+            }
+        }
+
+
+        canvas.addEventListener('click', function(e){
+            lense(e.offsetX, e.offsetY)
+            ctx2.putImageData(result_data,0,0);
+        });
+</script>
+
+</BODY>
+</HTML>

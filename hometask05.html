@@ -1,0 +1,231 @@
+<HTML>
+<BODY> 
+<canvas width='500', height='500', id='hometask05'></canvas>
+
+<script>
+        var canvas = document.getElementById('hometask05');
+        var ctx = canvas.getContext('2d');
+        function pixel(x, y){
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+ 
+        function clear(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+        }
+
+        class CustomPoint{
+            constructor(x, y){
+                this.x=x;
+                this.y=y;
+            }
+            draw(){
+                pixel(this.x,this.y);
+            }
+            measure(p){         // pythagorean distance
+                return Math.sqrt((this.x-p.x)*(this.x-p.x) + (this.y-p.y)*(this.y-p.y));
+            }
+        }
+
+
+        let cornerA = new CustomPoint(0, 0);        // corner of canvas - used for checking, if inside or outside the figure
+        let cornerB = new CustomPoint(canvas.width, 0); // same
+        let cornerC = new CustomPoint(canvas.width, canvas.height); // same
+
+
+        class Brusher{          // class for color switching
+            constructor(a){
+                this.default = a;
+                this.color1 = a;
+                this.color2 = ctx.fillStyle;
+            }
+            swap(){
+                ctx.fillStyle = this.color1;
+                [this.color1, this.color2] = [this.color2, this.color1];
+            }
+            normalize(){
+                if(this.color1!==this.default)
+                    this.swap();
+            }
+
+        }
+
+        class Turtle{           // class for line drawing -- same as in lab03
+            constructor(){
+                this.p0 = new CustomPoint(0,0);
+                this.p1 = new CustomPoint(0,0);
+                this.pi = new CustomPoint(0,0);
+                this.locked = false;
+            }
+            init(_x0, _y0, _x1, _y1){
+                if(_x0>_x1)
+                    [_x0, _y0, _x1, _y1] = [_x1, _y1, _x0, _y0];
+                _x1-=_x0;
+                _y1-=_y0;
+                this.step = (_y1<0)?-1:1;
+                this.swap = (this.step*_y1)>_x1;
+                this.delta = 2*(this.swap?_x1:this.step*_y1);
+                this.border = this.swap?this.step*_y1:_x1;
+                this.p0.x = _x0;    this.p0.y = _y0;
+                this.p1.x = _x1;    this.p1.y = _y1;
+                this.pi.x = 0;      this.pi.y = 0;
+                this.eps = 0;
+            }
+            initP(pointA, pointB){ 
+                this.init(pointA.x, pointA.y, pointB.x, pointB.y);
+            }
+            draw(){ 
+                pixel(this.pi.x+this.p0.x, this.pi.y+this.p0.y);
+            }
+            start(){
+                if(this.locked)
+                    return;
+                while(
+                    this.swap?
+                    this.step*this.pi.y<=this.step*this.p1.y:
+                    this.pi.x<=this.p1.x){
+                    if(this.eps>= this.border){
+                        if(this.swap)
+                            this.pi.x+=1;
+                        else
+                            this.pi.y+=this.step;
+                        this.eps -=2*this.border;
+                    }
+                    this.eps+=this.delta; 
+                    this.draw();
+                    if(this.swap)
+                            this.pi.y+=this.step;
+                        else
+                            this.pi.x+=1;
+                }
+            }
+            lock(){     // new feature - now our turtle can be locked and unlocked
+                this.locked = true;     // this is used for making fake-draws
+            }                       // and fake-draws are used to make our line know, if we inside or outside
+            unlock(){
+                this.locked = false;
+            }
+        }
+
+
+
+        function get_t(vA, vB, cA, cB){     // very simple formula used in algorithm
+             return( (cA.y-cB.y)*(vA.x-cA.x)+(cB.x-cA.x)*(vA.y-cA.y) ) / ( (vB.x-vA.x)*(cB.y-cA.y)+(vB.y-vA.y)*(cA.x-cB.x) );
+        }
+
+        function draw(array, length){       // this function is used for line drawing
+            let start;      // point, where we finish with fake-draws and start to draw visibly
+            let ex;         // something about maths and algorithm
+            let ey;         // something about maths and algorithm
+            let t;          // something about maths and algorithm
+            if(array[length].x!==array[length+1].x){        // check that line is not || to top side
+                t = get_t(array[length], array[length+1], cornerA, cornerB);
+                ex = (array[length+1].x-array[length].x)*t + array[length].x;       // counting point of crossing with border
+                ey = 0;
+            } else {
+                t = get_t(array[length], array[length+1], cornerB, cornerC);
+                ex = 0;
+			    ey = (array[length+1].y-array[length].y)*t + array[length].y;      // same here
+            }
+
+            let turtway = [new CustomPoint(ex,ey)];                     // array of our path-points (they all are in the same line)
+            if(turtway[0].measure(array[length])>turtway[0].measure(array[length+1]))       // if our line is not started from top, change it
+                [array[length], array[length+1]] = [array[length+1], array[length]]
+            start = array[length];              // we need to know about real start to be able to end fake-draws and draw visibly
+            turtway.push(array[length]);        // storing our real start in array
+            array[length] = turtway[0];         // now our line is extended to fake-start on the edge of the canvas
+
+            for(let i_line=0; i_line<length; ++i_line){     // for all points of the figure
+                let flag = false;          // used only for oy-parallel case in the task of checking cut-crossing as complication of infiline-crossing
+                let test_A = array[i_line];   // first point of the pair we check 
+                let test_B = array[(i_line+1)%length];  // second
+				t = get_t(array[length], array[length+1], test_A, test_B);
+                if(test_A.x > test_B.x)     // all order checks for the task of checking cut-crossing (as complication of infiline-crossing)
+                        [test_A, test_B] = [test_B, test_A];
+                else if(test_A.x===test_B.x)
+                    if(test_A.y > test_B.y){
+                        [test_A, test_B] = [test_B, test_A];
+                        flag = true;
+                    }
+				if (t<=1 && t>=0) {
+					ex = (array[length+1].x-array[length].x)*t + array[length].x;
+					ey = (array[length+1].y-array[length].y)*t + array[length].y;
+                    if(ex<test_A.x || ex>test_B.x || (flag && (ey<test_A.y || ey>test_B.y)))        // now we check that we cross cut, no line
+                        continue;
+                    turtway.push(new CustomPoint(ex,ey));   // store crossing point
+				}
+            }
+            turtway.push(array[length+1]);      // store end of the line
+
+            let pos = turtway[0];               // variable that stores place we are at
+            turtway[0] = true;                  // invalidate all points that were visited
+            tur.lock();                         // we start with fake-checking
+            bruh.swap();                        // theres one fake-check that is an excessive cross-check so we have to do a swap
+            for(let k=0; k<turtway.length-1; ++k){      //  for all points we have
+                if(pos===start)             // if we entered point of true line start
+                    tur.unlock();               // we start to draw
+
+                let next;
+                min = 1000000000;
+                for(let i=0; i<turtway.length; ++i){    // find next (closest) point, because they can be disordered
+                    if(turtway[i]===true)
+                        continue;
+                    if(pos.measure(turtway[i])<min){
+                        min = pos.measure(turtway[i]);
+                        next = i;
+                    }
+                }
+                let j = next;       // variable swap
+                next = turtway[j];
+                turtway[j] = true;  // with invalidation
+
+                tur.initP(pos, next);   // put points into turtle
+                tur.start();            // draw (or no)
+                bruh.swap();            // swap colors
+                pos = next;             // move to next point (that is line's end)
+            }
+
+            bruh.normalize();           // set starting color back to black
+        }
+
+
+        let point_index = 0;
+        let tur = new Turtle();
+        let bruh = new Brusher("#00ff00");
+        let arr = [];
+        let pamount = 0;
+
+        canvas.addEventListener('click', function(e){
+        if(point_index===0){        // polyangle drawing mode
+            arr[pamount] = new CustomPoint(e.offsetX, e.offsetY);
+            pamount++;
+            if(pamount>1){
+                tur.initP(arr[pamount-2], arr[pamount-1])
+                tur.start();
+            }
+        } else {
+            if(point_index===-1){   // first point
+                arr[pamount].x = e.offsetX;
+                arr[pamount].y = e.offsetY;
+            } else {                // second point
+                arr[pamount+1].x = e.offsetX;
+                arr[pamount+1].y = e.offsetY;
+                draw(arr, pamount);
+            }
+            point_index *=-1;       // swap mode
+        }
+        });
+
+        document.addEventListener('keydown', function(e){
+            if(point_index===0 && pamount>1){
+                point_index=-1;
+                tur.initP(arr[0], arr[pamount-1])
+                tur.start();
+                arr[pamount] = new CustomPoint(0,0);
+                arr[pamount+1] = new CustomPoint(0,0);
+            }
+        });
+</script>
+
+</BODY>
+</HTML>

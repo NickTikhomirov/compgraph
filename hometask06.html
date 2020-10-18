@@ -1,0 +1,182 @@
+<HTML>
+<BODY> 
+<canvas width='500', height='500', id='hometask05'></canvas>
+
+<script>
+        var canvas = document.getElementById('hometask05');
+        var ctx = canvas.getContext('2d');
+        function pixel(x, y){
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        function debugPixel(x, y){
+            let temp = ctx.fillStyle;
+            ctx.fillStyle = 'red';
+            pixel(x,y);
+            ctx.fillStyle = temp;
+        }
+ 
+        function clear(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+        }
+
+        class CustomPoint{
+            constructor(x, y){
+                this.x=x;
+                this.y=y;
+            }
+            draw(){
+                pixel(this.x,this.y);
+            }
+        }
+
+
+        class Brusher{
+            constructor(a){
+                this.lock = true;
+                this.color1 = a;
+                this.color2 = ctx.fillStyle;
+            }
+            swap(){
+                ctx.fillStyle = this.color1;
+                [this.color1, this.color2] = [this.color2, this.color1];
+            }
+        }
+
+        class Turtle{
+            constructor(){
+                this.p0 = new CustomPoint(0,0);
+                this.p1 = new CustomPoint(0,0);
+                this.pi = new CustomPoint(0,0);
+            }
+            init(_x0, _y0, _x1, _y1){
+                if(_x0>_x1)
+                    [_x0, _y0, _x1, _y1] = [_x1, _y1, _x0, _y0];
+                _x1-=_x0;
+                _y1-=_y0;
+                this.step = (_y1<0)?-1:1;
+                this.swap = (this.step*_y1)>_x1;
+                this.delta = 2*(this.swap?_x1:this.step*_y1);
+                this.border = this.swap?this.step*_y1:_x1;
+                this.p0.x = _x0;    this.p0.y = _y0;
+                this.p1.x = _x1;    this.p1.y = _y1;
+                this.pi.x = 0;      this.pi.y = 0;
+                this.eps = 0;
+            }
+            initP(pointA, pointB){ 
+                this.init(pointA.x, pointA.y, pointB.x, pointB.y);
+            }
+            draw(){ 
+                pixel(this.pi.x+this.p0.x, this.pi.y+this.p0.y);
+            }
+            start(){
+                while(
+                    this.swap?
+                    this.step*this.pi.y<=this.step*this.p1.y:
+                    this.pi.x<=this.p1.x){
+                    if(this.eps>= this.border){
+                        if(this.swap)
+                            this.pi.x+=1;
+                        else
+                            this.pi.y+=this.step;
+                        this.eps -=2*this.border;
+                    }
+                    this.eps+=this.delta; 
+                    this.draw();
+                    if(this.swap)
+                            this.pi.y+=this.step;
+                        else
+                            this.pi.x+=1;
+                }
+            }
+        }
+
+        class random_stack{
+            constructor(){
+                this.contents = [];
+                this.length = 0;
+            }
+            rand(bound){
+                return Math.floor(Math.random() * bound);
+            }
+            push_(x, y){
+                this.contents[this.length] = new CustomPoint(x,y);
+                ++this.length;
+            }
+            push(p){
+                this.contents[this.length] = p;
+                ++this.length;
+            }
+            pop(){
+                let r = this.rand(this.length);
+                [this.contents[r], this.contents[this.length-1]] = [this.contents[this.length-1], this.contents[r]];
+                return this.pop_end();
+            }
+            pop_end(){
+                --this.length;
+                return this.contents[this.length];
+            }
+            empty(){
+                return this.length===0;
+            }
+        }
+
+
+
+
+
+        function fill(x,y){
+            let data = ctx.getImageData(0,0,canvas.width, canvas.height).data;
+            let rstack = new random_stack();
+            let example = [data[(y*canvas.width+x)*4], data[(y*canvas.width+x)*4+1], data[(y*canvas.width+x)*4+2]];
+            rstack.push_(x,y);
+            while(!rstack.empty()){
+                let p = rstack.pop();
+                pixel(p.x, p.y);
+                for(let clock=0; clock<4; ++clock){
+                    //sleep(1);
+                    let neigh = new CustomPoint(p.x+(clock>>1)*((clock%2)?1:-1), p.y+(1-(clock>>1))*((clock%2)?1:-1));
+                    let flag = data[(neigh.y*canvas.width+neigh.x)*4]==example[0] &&
+                                data[(neigh.y*canvas.width+neigh.x)*4+1]==example[1] &&
+                                data[(neigh.y*canvas.width+neigh.x)*4+2]==example[2];
+                    if(flag)
+                        rstack.push(neigh);
+                }
+            }
+        }
+
+
+
+
+        let point_index = 0;
+        let tur = new Turtle();
+        let bruh = new Brusher("#00ff00");
+        let arr = [];
+        let pamount = 0;
+
+        canvas.addEventListener('click', function(e){
+        if(point_index===0){
+            arr[pamount] = new CustomPoint(e.offsetX, e.offsetY);
+            pamount++;
+            if(pamount>1){
+                tur.initP(arr[pamount-2], arr[pamount-1])
+                tur.start();
+            }
+        } else if(point_index===1){
+            fill();
+            point_index *=-1;
+        }
+        });
+
+        document.addEventListener('keydown', function(e){
+            if(point_index===0 && pamount>1){
+                point_index=1;
+                tur.initP(arr[0], arr[pamount-1])
+                tur.start();
+                bruh.swap();
+            }
+        });
+</script>
+
+</BODY>
+</HTML>
