@@ -33,13 +33,13 @@
 
         class Brusher{
             constructor(a){
-                this.lock = true;
-                this.color1 = a;
-                this.color2 = ctx.fillStyle;
+                this.colors = ["#ffff00", "#00ff00", "#00FFFF", "#FFBBBB"]
+                this.counter = 0;
             }
             swap(){
-                ctx.fillStyle = this.color1;
-                [this.color1, this.color2] = [this.color2, this.color1];
+                ctx.fillStyle = this.colors[this.counter];
+                this.counter++;
+                this.counter%=4;
             }
         }
 
@@ -92,58 +92,59 @@
         }
 
         class random_stack{
-            constructor(){
-                this.contents = [];
+            constructor(l){
+                this.contentsX = new Uint32Array(l);
+                this.contentsY = new Uint32Array(l);
                 this.length = 0;
             }
             rand(bound){
                 return Math.floor(Math.random() * bound);
             }
             push_(x, y){
-                this.contents[this.length] = new CustomPoint(x,y);
+                this.contentsX[this.length] = x;
+                this.contentsY[this.length] = y;
                 ++this.length;
             }
-            push(p){
-                this.contents[this.length] = p;
-                ++this.length;
-            }
-            pop(){
+            pop(p){
                 let r = this.rand(this.length);
-                [this.contents[r], this.contents[this.length-1]] = [this.contents[this.length-1], this.contents[r]];
-                return this.pop_end();
+                [this.contentsX[r], this.contentsX[this.length-1]] = [this.contentsX[this.length-1], this.contentsX[r]];
+                [this.contentsY[r], this.contentsY[this.length-1]] = [this.contentsY[this.length-1], this.contentsY[r]];
+                this.pop_end(p);
             }
-            pop_end(){
+            pop_end(p){
                 --this.length;
-                return this.contents[this.length];
+                p[0] = this.contentsX[this.length]
+                p[1] = this.contentsY[this.length];
             }
             empty(){
                 return this.length===0;
             }
         }
 
+        let p = [];
 
-
-
-
-        function fill(x,y){
-            let data = ctx.getImageData(0,0,canvas.width, canvas.height).data;
-            let rstack = new random_stack();
-            let example = [data[(y*canvas.width+x)*4], data[(y*canvas.width+x)*4+1], data[(y*canvas.width+x)*4+2]];
-            rstack.push_(x,y);
-            while(!rstack.empty()){
-                let p = rstack.pop();
-                pixel(p.x, p.y);
-                for(let clock=0; clock<4; ++clock){
-                    //sleep(1);
-                    let neigh = new CustomPoint(p.x+(clock>>1)*((clock%2)?1:-1), p.y+(1-(clock>>1))*((clock%2)?1:-1));
-                    let flag = data[(neigh.y*canvas.width+neigh.x)*4]==example[0] &&
-                                data[(neigh.y*canvas.width+neigh.x)*4+1]==example[1] &&
-                                data[(neigh.y*canvas.width+neigh.x)*4+2]==example[2];
-                    if(flag)
-                        rstack.push(neigh);
-                }
+        function fill(){
+            let flag;
+            if(rstack.empty())
+                return;
+            bruh.swap();
+            data = ctx.getImageData(0,0,canvas.width, canvas.height).data;
+            rstack.pop(p);
+            pixel(p[0], p[1]);
+            for(let clock=0; clock<4; ++clock){
+                p[0] += (clock>>1)*(clock%2*2-1)
+                p[1] += (1-(clock>>1))*(clock%2*2-1);          
+                flag =  ((data[(p[1]*canvas.width+p[0])*4+0]===example[0]) &&
+                        (data[(p[1]*canvas.width+p[0])*4+1]===example[1]) &&
+                        (data[(p[1]*canvas.width+p[0])*4+2]===example[2]) &&
+                        (data[(p[1]*canvas.width+p[0])*4+3]!==255));
+                if(flag)
+                    rstack.push_(p[0], p[1]);
+                p[0] -= (clock>>1)*(clock%2*2-1)
+                p[1] -= (1-(clock>>1))*(clock%2*2-1);  
             }
         }
+        
 
 
 
@@ -153,6 +154,9 @@
         let bruh = new Brusher("#00ff00");
         let arr = [];
         let pamount = 0;
+        let data
+        let rstack  = true;
+        let example;
 
         canvas.addEventListener('click', function(e){
         if(point_index===0){
@@ -163,8 +167,15 @@
                 tur.start();
             }
         } else if(point_index===1){
-            fill();
-            point_index *=-1;
+            let x = e.offsetX;
+            let y = e.offsetY;
+            if(rstack===true){
+                data = ctx.getImageData(0,0,canvas.width, canvas.height).data;
+                rstack = new random_stack(data.length/4);
+                example = [data[(y*canvas.width+x)*4], data[(y*canvas.width+x)*4+1], data[(y*canvas.width+x)*4+2]];
+            }
+            rstack.push_(x,y);
+            setInterval(fill, 4);
         }
         });
 
@@ -173,7 +184,6 @@
                 point_index=1;
                 tur.initP(arr[0], arr[pamount-1])
                 tur.start();
-                bruh.swap();
             }
         });
 </script>
