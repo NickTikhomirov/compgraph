@@ -1,0 +1,239 @@
+<HTML>
+    <BODY> 
+    <canvas width='500', height='500', id='hometask05'></canvas>
+    
+    <script>
+            var canvas = document.getElementById('hometask05');
+            var ctx = canvas.getContext('2d');
+            function pixel(x, y){
+                ctx.fillRect(x, y, 1, 1);
+            }
+    
+            class epsilonizer{
+                constructor(eps){
+                    this.epsilon = eps;
+                }
+                eq(a, b){
+                    return Math.abs(a-b)<=this.epsilon;
+                }
+                eqx(a,b){
+                    if(a===undefined || b===undefined)
+                        return false;
+                    return this.eq(a.x, b.x);
+                }
+            }
+
+            let eps = new epsilonizer(200000000);
+
+     
+            function clear(){
+                ctx.clearRect(0,0,canvas.width, canvas.height);
+            }
+    
+            class CustomPoint{
+                constructor(x, y){
+                    this.x=x;
+                    this.y=y;
+                }
+                draw(){
+                    pixel(this.x,this.y);
+                }
+                measure(p){         // pythagorean distance
+                    return Math.sqrt((this.x-p.x)*(this.x-p.x) + (this.y-p.y)*(this.y-p.y));
+                }
+            }
+    
+    
+            class Brusher{          // class for color switching
+                constructor(a){
+                    this.default = a;
+                    this.color1 = a;
+                    this.color2 = ctx.fillStyle;
+                }
+                swap(){
+                    ctx.fillStyle = this.color1;
+                    [this.color1, this.color2] = [this.color2, this.color1];
+                }
+                normalize(){
+                    if(this.color1!==this.default)
+                        this.swap();
+                }
+    
+            }
+    
+            class Turtle{
+                constructor(){
+                    this.p0 = new CustomPoint(0,0);
+                    this.p1 = new CustomPoint(0,0);
+                    this.pi = new CustomPoint(0,0);
+                    this.locked = false;
+                    this.draw = (tut) => {
+                        pixel(tut.pi.x+tut.p0.x, tut.pi.y+tut.p0.y);
+                    }
+                }
+                init(_x0, _y0, _x1, _y1){
+                    if(_x0>_x1)
+                        [_x0, _y0, _x1, _y1] = [_x1, _y1, _x0, _y0];
+                    _x1-=_x0;
+                    _y1-=_y0;
+                    this.step = (_y1<0)?-1:1;
+                    this.swap = (this.step*_y1)>_x1;
+                    this.delta = 2*(this.swap?_x1:this.step*_y1);
+                    this.border = this.swap?this.step*_y1:_x1;
+                    this.p0.x = _x0;    this.p0.y = _y0;
+                    this.p1.x = _x1;    this.p1.y = _y1;
+                    this.pi.x = 0;      this.pi.y = 0;
+                    this.eps = 0;
+                }
+                initP(pointA, pointB){ 
+                    this.init(pointA.x, pointA.y, pointB.x, pointB.y);
+                }
+                
+                start(){
+                    if(this.locked)
+                        return;
+                    while(
+                        this.swap?
+                        this.step*this.pi.y<=this.step*this.p1.y:
+                        this.pi.x<=this.p1.x){
+                        if(this.eps>= this.border){
+                            if(this.swap)
+                                this.pi.x+=1;
+                            else
+                                this.pi.y+=this.step;
+                            this.eps -=2*this.border;
+                        }
+                        this.eps+=this.delta; 
+                        this.draw(this);
+                        if(this.swap)
+                                this.pi.y+=this.step;
+                            else
+                                this.pi.x+=1;
+                    }
+                }
+                lock(){     // new feature - now our turtle can be locked and unlocked
+                    this.locked = true;     // this is used for making fake-draws
+                }                       // and fake-draws are used to make our line know, if we inside or outside
+                unlock(){
+                    this.locked = false;
+                }
+            }
+    
+    
+            class Polyangle{
+                constructor(){
+                    this.mirror = ctx.createImageData(canvas.width, canvas.height);
+                    this.points = [];
+                    this.slave = new Turtle();
+                    this.mirror_slave = new Turtle();
+                    this.mirror_slave.master = this;
+                    this.mirror_slave.draw = (tut) => {
+                        let canv = tut.master.mirror.data;
+                        canv[((tut.pi.y+tut.p0.y)*canvas.width + tut.pi.x+tut.p0.x)*4+3] = 255;
+                    }
+                    this.minX = new CustomPoint(10000000,0);
+                    this.maxX = new CustomPoint(0,0);
+                    this.minY = new CustomPoint(0,10000000);
+                    this.maxY = new CustomPoint(0,0);
+                }
+                insert(point){
+                    if(this.minX.x >= point.x){
+                        this.minX = point;
+                    } else if (this.maxX.x < point.x){
+                        this.maxX = point;
+                    }
+                    if(this.minY.y >= point.y){
+                        this.minY = point;
+                    } else if (this.maxY.y < point.y){
+                        this.maxY = point;
+                    }
+                    this.points[this.points.length] = point;
+                    if(this.points.length<2)
+                        return;
+                    this.slave.initP(this.points[this.points.length-2], this.points[this.points.length-1]);
+                    this.mirror_slave.initP(this.points[this.points.length-2], this.points[this.points.length-1]);
+                    this.slave.start();
+                    this.mirror_slave.start();
+                }
+                finalize(){
+                    this.slave.initP(this.points[0], this.points[this.points.length-1]);
+                    this.mirror_slave.initP(this.points[0], this.points[this.points.length-1]);
+                    this.slave.start();
+                    this.mirror_slave.start();
+                }
+                isBlack(x,y){
+                    return this.mirror.data[(y*canvas.width+x)*4+3]>220;
+                }
+                fill(){
+                    bruh.swap();
+                    for(let iy = this.minY.y-1; iy <= this.maxY.y; ++iy){
+                        let blacks = [];
+                        let prev = undefined;
+                        for(let ix = this.minX.x-1; ix <= this.maxX.x; ++ix) {
+                            if(this.isBlack(ix,iy)){
+                                let curPoint = new CustomPoint(ix, iy);
+                                if(!eps.eqx(prev, curPoint))
+                                    blacks.push(curPoint);
+                                prev = curPoint;
+                            } else {
+                                if(prev !== undefined && !eps.eqx(prev, blacks[blacks.length-1]))
+                                    blacks.push(prev);
+                                else console.log('here')
+                                prev = undefined;
+                            }
+                        }
+
+                        try{
+                            for(let i=0; i< blacks.length; i+=2){
+                                this.slave.initP(blacks[i], blacks[i+1])
+                                this.slave.start();
+                            }
+                        } catch(a){}
+                    }
+
+                    bruh.normalize();
+                    for(let i = 0; i<this.points.length; ++i){
+                        this.slave.initP(this.points[i], this.points[(i+1)%this.points.length]);
+                        this.slave.start();
+                    }
+                }
+
+                valid(){
+                    return this.points.length>2;
+                }
+            }
+
+
+
+    
+            
+    
+            let point_index = 0;
+            let tur = new Turtle();
+            let bruh = new Brusher("#00ff00");
+            let arr = [];
+            let pamount = 0;
+            let poly = new Polyangle();
+    
+            canvas.addEventListener('click', function(e){
+            if(point_index===0){        // polyangle drawing mode
+                poly.insert(new CustomPoint(e.offsetX, e.offsetY))
+                //pamount++;
+                //if(pamount>1){
+                //    tur.initP(arr[pamount-2], arr[pamount-1])
+                //    tur.start();
+                //}
+            }
+            });
+    
+            document.addEventListener('keydown', function(e){
+                if(point_index===0 && poly.valid()){
+                    point_index=-1;
+                    poly.finalize();
+                    poly.fill();
+                }
+            });
+    </script>
+    
+    </BODY>
+    </HTML>
